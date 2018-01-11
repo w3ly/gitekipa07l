@@ -1,0 +1,23 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<Events>
+	<UserEvent>
+ 		<Date>01/4/2018</Date>
+		<Title>TestTitle1</Title>
+		<Description>Description of the event1</Description>
+	</UserEvent>
+	<UserEvent>
+ 		<Date>01/3/2018</Date>
+		<Title>TestTitle2</Title>
+		<Description>Description of the event2</Description>
+	</UserEvent>
+	<UserEvent>
+ 		<Date>01/5/2018</Date>
+		<Title>TestTitle3</Title>
+		<Description>Description of the event3</Description>
+	</UserEvent>
+	<UserEvent>
+ 		<Date>01/6/2018</Date>
+		<Title>TestTitle4</Title>
+		<Description>Description of the event4</Description>
+	</UserEvent>
+</Events>
