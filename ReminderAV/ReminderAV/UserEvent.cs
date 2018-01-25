@@ -27,6 +27,25 @@ namespace ReminderAV
         DateTime _eventDate;
         string _eventTitle;
         string _eventDesc;
+        string _projectTitle;
+        string _projectCreator;
+        string _projectDuty;
+        DateTime _projectDeadLine;
+        Projects _project;
+
+        [XmlIgnore]
+        public Projects Project
+        {
+            get
+            {
+                return _project;
+            }
+            set
+            {
+                _project = value;
+                NotifyPropertyChanged("Project");
+            }
+        }
         [XmlElement("Date")]
         public DateTime EventDate
         {
@@ -67,6 +86,60 @@ namespace ReminderAV
             }
         }
 
+        [XmlElement("ProjectTitle")]
+        public string ProjectTitle
+        {
+            get
+            {
+                return _projectTitle;
+            }
+            set
+            {
+
+                _projectTitle = value;
+                NotifyPropertyChanged("ProjectTitle");
+            }
+        }
+        [XmlElement("ProjectCreator")]
+        public string ProjectCreator
+        {
+            get
+            {
+                return _projectCreator;
+            }
+            set
+            {
+                _projectCreator = value;
+                NotifyPropertyChanged("ProjectCreator");
+            }
+        }
+        [XmlElement("ProjectDuty")]
+        public string ProjectDuty
+        {
+            get
+            {
+                return _projectDuty;
+            }
+            set
+            {
+                _projectDuty = value;
+                NotifyPropertyChanged("ProjectDuty");
+            }
+        }
+        [XmlElement("ProjectDeadLine")]
+        public DateTime ProjectDeadLine
+        {
+            get
+            {
+                return _projectDeadLine;
+            }
+            set
+            {
+                _projectDeadLine = value;
+                NotifyPropertyChanged("ProjectDeadLine");
+            }
+        }
+
         public UserEvent()
         {
 
@@ -74,15 +147,16 @@ namespace ReminderAV
         public UserEvent(DateTime date, string title, string desc)
         {
             EventDate = date;
-            System.Diagnostics.Debug.WriteLine("!---> " + date);
             EventTitle = title;
             EventDesc = desc;
         }
+
         public event PropertyChangedEventHandler PropertyChanged;
         private void NotifyPropertyChanged(string propertyName)
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
+
         public UserEvent Clone()
         {
             UserEvent ue = new UserEvent(_eventDate, _eventTitle.Clone().ToString(), _eventDesc.Clone().ToString());

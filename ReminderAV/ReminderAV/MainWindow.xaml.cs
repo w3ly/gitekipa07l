@@ -18,6 +18,8 @@ using System.IO;
 using System.Xml.Linq;
 using System.Xml.Serialization;
 using System.Configuration;
+using System.Globalization;
+
 namespace ReminderAV
 {
     /// <summary>
@@ -36,6 +38,19 @@ namespace ReminderAV
             {
                 _events = value;
                 NotifyPropertyChanged("Events");
+            }
+        }
+        ObservableCollection<Projects> projects;
+        public ObservableCollection<Projects> Projects
+        {
+            get
+            {
+                return projects;
+            }
+            set
+            {
+                projects = value;
+                NotifyPropertyChanged("Projects");
             }
         }
         UserEvent _selectedEvent;
@@ -83,7 +98,6 @@ namespace ReminderAV
             }
             set
             {
-                System.Diagnostics.Debug.WriteLine("CHANGE! " + value);
                 _newEventDate = value;
                 NotifyPropertyChanged("NewEventDate");
             }
@@ -210,26 +224,26 @@ namespace ReminderAV
         #endregion
 
         string xmlDirectoryPath;
+
         public MainWindow()
         {
+            projects = new ObservableCollection<Projects>();
+            TxtToList();
             //Take path from config
             xmlDirectoryPath = ConfigurationManager.AppSettings.Get("EventsPath");
             if (string.IsNullOrEmpty(xmlDirectoryPath))
             {
-                xmlDirectoryPath = AppDomain.CurrentDomain.BaseDirectory + @"\"+ConfigurationManager.AppSettings.Get("EventsName"); ;
+                xmlDirectoryPath = AppDomain.CurrentDomain.BaseDirectory + @"\" + ConfigurationManager.AppSettings.Get("EventsName"); ;
                 ConfigurationManager.AppSettings.Set("EventsPath", xmlDirectoryPath);
             }
-
-            //For debug purposes
-            System.Diagnostics.Debug.WriteLine("---> " + xmlDirectoryPath);
-
             InitializeComponent();
+
 
             //Hack that simplifies picking date
             NewEventDate = DateTime.Now;
 
             LoadEvents();
-       
+
             this.DataContext = this;
         }
 
@@ -322,14 +336,12 @@ namespace ReminderAV
         {
             EventsList el = new EventsList();
 
-            XmlSerializer serializer = new XmlSerializer(typeof(EventsList));
             try
             {
                 using (var x = new FileStream(xmlDirectoryPath, FileMode.Open))
                 {
                     var xml = new XmlSerializer(typeof(EventsList));
                     el = (EventsList)xml.Deserialize(x);
-
                     bool changes = false;
                     foreach (var item in el.Events)
                     {
@@ -343,30 +355,52 @@ namespace ReminderAV
                 }
             }
             catch (Exception e)
-            { 
+            {
                 MessageBox.Show(e.Message, "Problem with opening events. Created new, empty file.");
                 File.Create(xmlDirectoryPath);
             }
+            foreach (var item in Events)
+            {
+                if (string.IsNullOrEmpty(item.ProjectTitle))
+                {
+                    string x = item.EventDesc;
+                    foreach (var y in Projects)
+                    {
+                        if (x == y.Title)
+                        {
+                            item.ProjectTitle = y.Title;
+                            item.ProjectDuty = y.Duty;
+                            item.ProjectCreator = y.Creator;
+                            item.ProjectDeadLine = y.DeadLine;
+                            item.Project = y;
+                        }
+                    }
+                }
+                else
+                {
+                    string x = item.EventDesc;
+                    foreach (var y in Projects)
+                        if (x == y.Title)
+                            item.Project = y;
+                }
+            }
+
             if (Events.Count > 0 && Events != null)
                 SelectedEvent = Events[0];
         }
         //Save to file in .exe file directory
         void SaveEvents()
         {
-            XmlSerializer serializer = new XmlSerializer(typeof(EventsList));
             try
             {
-                using (var x = new FileStream(xmlDirectoryPath, FileMode.Create))
+                using (var newFile = new FileStream(xmlDirectoryPath, FileMode.Create))
                 {
                     EventsList el = new EventsList();
                     foreach (var item in Events)
-                    {
-
                         el.Events.Add(item);
-                    }
 
                     var xml = new XmlSerializer(typeof(EventsList));
-                    xml.Serialize(x, el);
+                    xml.Serialize(newFile, el);
                 }
             }
             catch (Exception e)
@@ -386,12 +420,10 @@ namespace ReminderAV
             // Get the selected file name and display in a TextBox 
             if (result == true)
             {
-                // Open document 
-                //ConfigurationManager.AppSettings.Set("EventsPath", dlg.FileName.)
                 string newPath = dlg.FileName;
 
                 xmlDirectoryPath = ConfigurationManager.AppSettings.Get("EventsPath");
-                if(MessageBox.Show("Save actual data in file and load new file now? Note that new file will be loaded with new appliaction startup", "Path has been changed", MessageBoxButton.YesNo, MessageBoxImage.Question ) == MessageBoxResult.Yes)
+                if (MessageBox.Show("Save actual data in file and load new file now? Note that new file will be loaded with new appliaction startup", "Path has been changed", MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.Yes)
                 {
                     SaveEvents();
                     ConfigurationManager.AppSettings.Set("EventsPath", newPath);
@@ -400,11 +432,50 @@ namespace ReminderAV
                     LoadEvents();
                 }
                 else
-                {
                     ConfigurationManager.AppSettings.Set("EventsPath", newPath);
-                }
-                System.Diagnostics.Debug.WriteLine("!!! " + xmlDirectoryPath);
             }
+        }
+
+        void TxtToList()
+        {
+            String[] data = File.ReadAllLines("projekty.txt");
+
+            for (int j = 1; j < data.Length; j += 4)
+            {
+                int line = j;
+                Projects project = new Projects();
+                int i = 0;
+                while (i < 4)
+                {
+                    if (i + j == j)
+                        project.Creator = data[i + j];
+                    if (i + j == j + 1)
+                        project.Title = data[i + j];
+                    if (i + j == j + 2)
+                        project.Duty = data[i + j];
+                    if (i + j == j + 3)
+                        project.DeadLine = DateTime.Parse(data[i + j]);
+                    i++;
+                }
+                Projects.Add(project);
+            }
+
+            XmlSerializer serializer = new XmlSerializer(typeof(ProjectList));
+            try
+            {
+                using (var x = new FileStream("projectsOut.xml", FileMode.Create))
+                {
+                    ProjectList el = new ProjectList();
+                    foreach (var item in projects)
+                    {
+                        el.ProjectsList.Add(item);
+                    }
+
+                    var xml = new XmlSerializer(typeof(ProjectList));
+                    xml.Serialize(x, el);
+                }
+            }
+            finally { }
         }
     }
 }
